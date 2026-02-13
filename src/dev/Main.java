@@ -1,76 +1,87 @@
 package dev;
 
-import java.util.*;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-class PlagiarismDetector {
+class Event {
+    String url;
+    String userId;
+    String source;
 
-    private final int N = 5; // n-gram size
+    Event(String u, String user, String s) {
+        url = u;
+        userId = user;
+        source = s;
+    }
+}
 
-    // ngram -> documents containing it
-    private final Map<String, Set<String>> index = new HashMap<>();
+class Analytics {
 
-    // doc -> its ngrams
-    private final Map<String, List<String>> docNgrams = new HashMap<>();
+    private final Map<String, Integer> pageViews = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> uniqueVisitors = new ConcurrentHashMap<>();
+    private final Map<String, Integer> sourceCount = new ConcurrentHashMap<>();
 
-    public void addDocument(String docId, String text) {
-        List<String> grams = extractNgrams(text);
-        docNgrams.put(docId, grams);
+    public void process(Event e) {
 
-        for (String g : grams) {
-            index.computeIfAbsent(g, k -> new HashSet<>()).add(docId);
-        }
+        pageViews.merge(e.url, 1, Integer::sum);
+
+        uniqueVisitors.computeIfAbsent(e.url, k -> ConcurrentHashMap.newKeySet()).add(e.userId);
+
+        sourceCount.merge(e.source, 1, Integer::sum);
     }
 
-    public void analyze(String docId, String text) {
-        List<String> grams = extractNgrams(text);
+    public void dashboard() {
 
-        Map<String, Integer> matchCount = new HashMap<>();
+        System.out.println("\n=== DASHBOARD ===");
 
-        for (String g : grams) {
-            if (index.containsKey(g)) {
-                for (String other : index.get(g)) {
-                    matchCount.merge(other, 1, Integer::sum);
-                }
-            }
+        // top pages
+        PriorityQueue<Map.Entry<String, Integer>> pq = new PriorityQueue<>((a, b) -> b.getValue() - a.getValue());
+
+        pq.addAll(pageViews.entrySet());
+
+        System.out.println("Top Pages:");
+        for (int i = 0; i < 10 && !pq.isEmpty(); i++) {
+            var e = pq.poll();
+            int uniq = uniqueVisitors.getOrDefault(e.getKey(), Set.of()).size();
+            System.out.println((i + 1) + ". " + e.getKey() + " → " + e.getValue() + " views (" + uniq + " unique)");
         }
 
-        System.out.println("Extracted " + grams.size() + " n-grams");
+        int total = sourceCount.values().stream().mapToInt(i -> i).sum();
 
-        for (var e : matchCount.entrySet()) {
-            int matches = e.getValue();
-            double sim = matches * 100.0 / grams.size();
-
-            System.out.printf("Match with %s → %d n-grams → %.2f%% similarity%n", e.getKey(), matches, sim);
+        System.out.println("\nSources:");
+        for (var e : sourceCount.entrySet()) {
+            double pct = total == 0 ? 0 : (e.getValue() * 100.0 / total);
+            System.out.printf("%s: %.1f%%%n", e.getKey(), pct);
         }
-    }
-
-    private List<String> extractNgrams(String text) {
-        String[] words = text.toLowerCase().split("\\W+");
-        List<String> grams = new ArrayList<>();
-
-        for (int i = 0; i + N <= words.length; i++) {
-            StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < N; j++) {
-                sb.append(words[i + j]).append(" ");
-            }
-            grams.add(sb.toString().trim());
-        }
-
-        return grams;
     }
 }
 
 public class Main {
-    public static void main(String[] args) {
 
-        PlagiarismDetector p = new PlagiarismDetector();
+    public static void main(String[] args) throws Exception {
 
-        p.addDocument("essay_089", "Machine learning is a method of data analysis that automates analytical model building");
+        Analytics a = new Analytics();
 
-        p.addDocument("essay_092", "Machine learning is a method of data analysis that automates analytical model building using algorithms");
+        ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
 
-        String newDoc = "Machine learning is a method of data analysis that automates analytical model building";
+        exec.scheduleAtFixedRate(a::dashboard, 5, 5, TimeUnit.SECONDS);
 
-        p.analyze("essay_new", newDoc);
+        // simulate traffic
+        String[] urls = {"/news", "/sports", "/tech"};
+        String[] src = {"google", "direct", "facebook"};
+
+        Random r = new Random();
+
+        while (true) {
+            Event e = new Event(urls[r.nextInt(urls.length)], "user" + r.nextInt(1000), src[r.nextInt(src.length)]);
+            a.process(e);
+            Thread.sleep(50);
+        }
     }
 }
