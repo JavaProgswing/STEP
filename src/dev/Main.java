@@ -1,109 +1,90 @@
 package dev;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class UsernameService {
 
-    // username -> userId (simulates 10M users)
+    // username -> userId
     private final ConcurrentHashMap<String, Integer> users = new ConcurrentHashMap<>();
 
-    // username -> attempt count
-    private final ConcurrentHashMap<String, Integer> attempts = new ConcurrentHashMap<>();
+    // username -> attempts
+    private final ConcurrentHashMap<String, AtomicInteger> attempts = new ConcurrentHashMap<>();
 
-    private int userIdCounter = 1;
+    private final AtomicInteger idGen = new AtomicInteger(1);
 
-    // O(1) availability check
+    // O(1)
     public boolean checkAvailability(String username) {
-        attempts.merge(username, 1, Integer::sum);
+        attempts.computeIfAbsent(username, k -> new AtomicInteger(0)).incrementAndGet();
         return !users.containsKey(username);
     }
 
-    // register username if available
     public boolean register(String username) {
         if (!checkAvailability(username)) return false;
-        users.put(username, userIdCounter++);
+        users.put(username, idGen.getAndIncrement());
         return true;
     }
 
-    // suggestions if taken
     public List<String> suggestAlternatives(String username) {
-        List<String> suggestions = new ArrayList<>();
+        List<String> res = new ArrayList<>();
 
         if (!users.containsKey(username)) {
-            suggestions.add(username);
-            return suggestions;
+            res.add(username);
+            return res;
         }
 
-        // append numbers
+        // numeric suffix
         for (int i = 1; i <= 5; i++) {
-            String candidate = username + i;
-            if (!users.containsKey(candidate)) {
-                suggestions.add(candidate);
-            }
+            String c = username + i;
+            if (!users.containsKey(c)) res.add(c);
         }
 
-        // replace underscore with dot
+        // replace underscore
         if (username.contains("_")) {
-            String dotVersion = username.replace("_", ".");
-            if (!users.containsKey(dotVersion)) {
-                suggestions.add(dotVersion);
-            }
+            String dot = username.replace("_", ".");
+            if (!users.containsKey(dot)) res.add(dot);
         }
 
         // random suffix
         for (int i = 0; i < 3; i++) {
-            String candidate = username + "_" + new Random().nextInt(999);
-            if (!users.containsKey(candidate)) {
-                suggestions.add(candidate);
-            }
+            String c = username + "_" + new Random().nextInt(999);
+            if (!users.containsKey(c)) res.add(c);
         }
 
-        return suggestions;
+        return res;
     }
 
-    // most attempted username
     public String getMostAttempted() {
-        String maxUser = null;
+        String best = null;
         int max = 0;
 
-        for (Map.Entry<String, Integer> e : attempts.entrySet()) {
-            if (e.getValue() > max) {
-                max = e.getValue();
-                maxUser = e.getKey();
+        for (var e : attempts.entrySet()) {
+            int val = e.getValue().get();
+            if (val > max) {
+                max = val;
+                best = e.getKey();
             }
         }
-
-        return maxUser + " (" + max + " attempts)";
+        return best + " (" + max + " attempts)";
     }
 }
 
 public class Main {
     public static void main(String[] args) {
 
-        UsernameService service = new UsernameService();
+        UsernameService s = new UsernameService();
 
-        // simulate existing users
-        service.register("john_doe");
-        service.register("admin");
-        service.register("admin1");
+        s.register("john_doe");
+        s.register("admin");
 
-        System.out.println("john_doe available? " + service.checkAvailability("john_doe"));
+        System.out.println(s.checkAvailability("john_doe"));
+        System.out.println(s.checkAvailability("jane_smith"));
 
-        System.out.println("jane_smith available? " + service.checkAvailability("jane_smith"));
+        System.out.println(s.suggestAlternatives("john_doe"));
 
-        System.out.println("Suggestions for john_doe:");
-        System.out.println(service.suggestAlternatives("john_doe"));
+        for (int i = 0; i < 10000; i++) s.checkAvailability("admin");
 
-        // simulate many attempts
-        for (int i = 0; i < 10000; i++) {
-            service.checkAvailability("admin");
-        }
-
-        System.out.println("Most attempted: " + service.getMostAttempted());
+        System.out.println(s.getMostAttempted());
     }
 }
-
