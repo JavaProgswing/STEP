@@ -1,87 +1,82 @@
 package dev;
 
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-class Event {
-    String url;
-    String userId;
-    String source;
+class TokenBucket {
 
-    Event(String u, String user, String s) {
-        url = u;
-        userId = user;
-        source = s;
+    private final int capacity;
+    private final int refillRatePerSec;
+
+    private double tokens;
+    private long lastRefill;
+
+    public TokenBucket(int cap, int ratePerSec) {
+        capacity = cap;
+        refillRatePerSec = ratePerSec;
+        tokens = cap;
+        lastRefill = System.nanoTime();
+    }
+
+    public synchronized boolean allow() {
+        refill();
+
+        if (tokens >= 1) {
+            tokens -= 1;
+            return true;
+        }
+        return false;
+    }
+
+    private void refill() {
+        long now = System.nanoTime();
+        double seconds = (now - lastRefill) / 1e9;
+
+        double add = seconds * refillRatePerSec;
+        if (add > 0) {
+            tokens = Math.min(capacity, tokens + add);
+            lastRefill = now;
+        }
+    }
+
+    public synchronized int remaining() {
+        refill();
+        return (int) tokens;
     }
 }
 
-class Analytics {
+class RateLimiter {
 
-    private final Map<String, Integer> pageViews = new ConcurrentHashMap<>();
-    private final Map<String, Set<String>> uniqueVisitors = new ConcurrentHashMap<>();
-    private final Map<String, Integer> sourceCount = new ConcurrentHashMap<>();
+    private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
 
-    public void process(Event e) {
+    private final int LIMIT = 1000;
+    private final int REFILL_PER_SEC = 1000 / 3600; // per hour
 
-        pageViews.merge(e.url, 1, Integer::sum);
-
-        uniqueVisitors.computeIfAbsent(e.url, k -> ConcurrentHashMap.newKeySet()).add(e.userId);
-
-        sourceCount.merge(e.source, 1, Integer::sum);
+    public boolean check(String client) {
+        TokenBucket b = buckets.computeIfAbsent(client, k -> new TokenBucket(LIMIT, REFILL_PER_SEC));
+        return b.allow();
     }
 
-    public void dashboard() {
-
-        System.out.println("\n=== DASHBOARD ===");
-
-        // top pages
-        PriorityQueue<Map.Entry<String, Integer>> pq = new PriorityQueue<>((a, b) -> b.getValue() - a.getValue());
-
-        pq.addAll(pageViews.entrySet());
-
-        System.out.println("Top Pages:");
-        for (int i = 0; i < 10 && !pq.isEmpty(); i++) {
-            var e = pq.poll();
-            int uniq = uniqueVisitors.getOrDefault(e.getKey(), Set.of()).size();
-            System.out.println((i + 1) + ". " + e.getKey() + " → " + e.getValue() + " views (" + uniq + " unique)");
-        }
-
-        int total = sourceCount.values().stream().mapToInt(i -> i).sum();
-
-        System.out.println("\nSources:");
-        for (var e : sourceCount.entrySet()) {
-            double pct = total == 0 ? 0 : (e.getValue() * 100.0 / total);
-            System.out.printf("%s: %.1f%%%n", e.getKey(), pct);
-        }
+    public int remaining(String client) {
+        return buckets.getOrDefault(client, new TokenBucket(LIMIT, REFILL_PER_SEC)).remaining();
     }
 }
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
-        Analytics a = new Analytics();
+        RateLimiter rl = new RateLimiter();
 
-        ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
+        String client = "abc123";
 
-        exec.scheduleAtFixedRate(a::dashboard, 5, 5, TimeUnit.SECONDS);
-
-        // simulate traffic
-        String[] urls = {"/news", "/sports", "/tech"};
-        String[] src = {"google", "direct", "facebook"};
-
-        Random r = new Random();
-
-        while (true) {
-            Event e = new Event(urls[r.nextInt(urls.length)], "user" + r.nextInt(1000), src[r.nextInt(src.length)]);
-            a.process(e);
-            Thread.sleep(50);
+        for (int i = 0; i < 1100; i++) {
+            if (rl.check(client)) {
+                System.out.println("Allowed → remaining: " + rl.remaining(client));
+            } else {
+                System.out.println("DENIED → limit reached");
+                break;
+            }
         }
     }
 }
