@@ -1,55 +1,64 @@
 package dev;
 
-import java.util.*;
-
-class TrieNode {
-    Map<Character, TrieNode> children = new HashMap<>();
-    Map<String, Integer> freqMap = new HashMap<>();
+class ParkingSpot {
+    String plate;
+    long entryTime;
+    boolean deleted;
 }
 
-class AutocompleteSystem {
-    private TrieNode root = new TrieNode();
-    private Map<String, Integer> globalFreq = new HashMap<>();
+class ParkingLot {
+    private ParkingSpot[] table;
+    private int size;
 
-    public void addQuery(String query, int freq) {
-        globalFreq.put(query, globalFreq.getOrDefault(query, 0) + freq);
-        TrieNode node = root;
+    public ParkingLot(int capacity) {
+        table = new ParkingSpot[capacity];
+        size = capacity;
+    }
 
-        for (char c : query.toCharArray()) {
-            node.children.putIfAbsent(c, new TrieNode());
-            node = node.children.get(c);
-            node.freqMap.put(query, globalFreq.get(query));
+    private int hash(String plate) {
+        return Math.abs(plate.hashCode()) % size;
+    }
+
+    public void park(String plate) {
+        int idx = hash(plate);
+
+        for (int i = 0; i < size; i++) {
+            int probe = (idx + i) % size;
+
+            if (table[probe] == null || table[probe].deleted) {
+                ParkingSpot p = new ParkingSpot();
+                p.plate = plate;
+                p.entryTime = System.currentTimeMillis();
+                table[probe] = p;
+                System.out.println("Parked at " + probe);
+                return;
+            }
         }
     }
 
-    public List<String> search(String prefix) {
-        TrieNode node = root;
-        for (char c : prefix.toCharArray()) {
-            if (!node.children.containsKey(c)) return new ArrayList<>();
-            node = node.children.get(c);
+    public void exit(String plate) {
+        int idx = hash(plate);
+
+        for (int i = 0; i < size; i++) {
+            int probe = (idx + i) % size;
+            ParkingSpot p = table[probe];
+
+            if (p == null) return;
+            if (!p.deleted && p.plate.equals(plate)) {
+                long duration = System.currentTimeMillis() - p.entryTime;
+                p.deleted = true;
+                System.out.println("Exited. Duration: " + duration / 1000 + "s");
+                return;
+            }
         }
-
-        PriorityQueue<Map.Entry<String, Integer>> pq = new PriorityQueue<>(Map.Entry.comparingByValue());
-
-        for (var e : node.freqMap.entrySet()) {
-            pq.offer(e);
-            if (pq.size() > 10) pq.poll();
-        }
-
-        List<String> res = new ArrayList<>();
-        while (!pq.isEmpty()) res.add(pq.poll().getKey());
-        Collections.reverse(res);
-        return res;
     }
 }
 
 public class Main {
     public static void main(String[] args) {
-        AutocompleteSystem ac = new AutocompleteSystem();
-        ac.addQuery("java tutorial", 100);
-        ac.addQuery("javascript", 90);
-        ac.addQuery("java download", 80);
-
-        System.out.println(ac.search("jav"));
+        ParkingLot lot = new ParkingLot(500);
+        lot.park("ABC123");
+        lot.park("XYZ999");
+        lot.exit("ABC123");
     }
 }
