@@ -1,0 +1,205 @@
+package project1908;
+
+
+import java.util.Scanner;
+
+
+public class QuestionOne {
+   public static String replaceChars(String str, String s1, String s2) {
+       int ind = str.indexOf(s1);
+       int pos = 0;
+       int[] a = new int[str.length()];
+       while(ind != -1){
+           a[pos++] = ind;
+           ind = str.indexOf(s1, ind+1);
+       }
+       a[pos] = -1;
+       pos = 0;
+       StringBuilder sb = new StringBuilder();
+       for(int i = 0; i < str.length();){
+           if(a[pos] == i){
+               sb.append(s2);
+               i += s1.length();
+               pos++;
+           } else {
+               sb.append(str.charAt(i++));
+           }
+       }
+       return sb.toString();
+   }
+
+
+   public static void main(String[] args) {
+       Scanner scan = new Scanner(System.in);
+       System.out.print("Enter the string: ");
+       String str = scan.nextLine();
+       System.out.print("Enter the content to replace: ");
+       String s1 = scan.nextLine();
+       System.out.print("Enter the replacement string: ");
+       String s2 = scan.nextLine();
+       System.out.println(replaceChars(str, s1, s2));
+   }
+}
+
+package project1908;
+
+
+
+
+import java.util.Scanner;
+import java.util.StringTokenizer;
+
+
+public class QuestionTwo {
+   public static char toLowerCase(char ch){
+       return (ch>='A'&&ch<='Z')? (char) (ch + 32) : ch;
+   }
+   public static char toUpperCase(char ch){
+       return (ch>='a'&&ch<='z')? (char) (ch - 32) : ch;
+   }
+
+
+   public static String convertToPascalCase(String str){
+       StringTokenizer st = new StringTokenizer(str);
+       StringBuilder sb = new StringBuilder();
+       while(st.hasMoreTokens()){
+           String token = st.nextToken();
+           sb.append(" ");
+           char[] token_ch = token.toCharArray();
+           for(int i=0; i<token_ch.length; i++){
+               if(i==0) sb.append(toUpperCase(token_ch[i]));
+               else sb.append(toLowerCase(token_ch[i]));
+           }
+       }
+       return sb.substring(1);
+   }
+
+
+   public static String inbConvertToPascalCase(String str){
+       StringTokenizer st = new StringTokenizer(str);
+       StringBuilder sb = new StringBuilder();
+       while(st.hasMoreTokens()){
+           String token = st.nextToken();
+           sb.append(" ");
+           char[] token_ch = token.toCharArray();
+           for(int i=0; i<token_ch.length; i++){
+               if(i==0) sb.append(Character.toUpperCase(token_ch[i]));
+               else sb.append(Character.toLowerCase(token_ch[i]));
+           }
+       }
+       return sb.substring(1);
+   }
+
+
+   public static void comparePascalCase(String str){
+       String pc1 =  inbConvertToPascalCase(str);
+       System.out.println("Inbuilt pascal case: "+pc1);
+       String pc2 =  convertToPascalCase(str);
+       System.out.println("Pascal case: "+pc2);
+   }
+   public static void main(String[] args) {
+       Scanner scan = new Scanner(System.in);
+       System.out.print("Enter the string: ");
+       String str = scan.nextLine();
+       comparePascalCase(str);
+   }
+}
+
+package project1908;
+
+
+import java.util.Scanner;
+
+
+public class QuestionFour {
+   public static String encryptCaesarCipher(String s, int SHIFT) {
+       StringBuilder sb = new StringBuilder();
+       for (char ch : s.toCharArray()) {
+           if (Character.isUpperCase(ch)) {
+               if (ch + SHIFT > 'Z') sb.append((char) ('A' + (ch + SHIFT - 1) - 'Z'));
+               else if (ch + SHIFT < 'A') sb.append((char) ('Z' - ('A' - (ch + SHIFT + 1))));
+               else sb.append((char) (ch + SHIFT));
+           } else if (Character.isLowerCase(ch)) {
+               if (ch + SHIFT > 'z') sb.append((char) ('a' + (ch + SHIFT - 1) - 'z'));
+               else if (ch + SHIFT < 'a') sb.append((char) ('z' - ('a' - (ch + SHIFT + 1))));
+               else sb.append((char) (ch + SHIFT));
+           } else sb.append(ch);
+       }
+
+
+       return sb.toString();
+   }
+
+
+   public static String decryptCaesarCipher(String s, int SHIFT) {
+       StringBuilder sb = new StringBuilder();
+       SHIFT*=-1;
+       for (char ch : s.toCharArray()) {
+           if (Character.isUpperCase(ch)) {
+               if (ch + SHIFT > 'Z') sb.append((char) ('A' + (ch + SHIFT - 1) - 'Z'));
+               else if (ch + SHIFT < 'A') sb.append((char) ('Z' - ('A' - (ch + SHIFT + 1))));
+               else sb.append((char) (ch + SHIFT));
+           } else if (Character.isLowerCase(ch)) {
+               if (ch + SHIFT > 'z') sb.append((char) ('a' + (ch + SHIFT - 1) - 'z'));
+               else if (ch + SHIFT < 'a') sb.append((char) ('z' - ('a' - (ch + SHIFT + 1))));
+               else sb.append((char) (ch + SHIFT));
+           } else sb.append(ch);
+       }
+
+
+       return sb.toString();
+   }
+
+
+   public static void displayASCII(String s) {
+       System.out.print("ASCII: ");
+       for (char ch : s.toCharArray()) {
+           System.out.print("('" + ch + "')" + (int) ch + " ");
+       }
+       System.out.println();
+   }
+
+
+   public static void validateEncryption(String s, int SHIFT) {
+       boolean b = decryptCaesarCipher(encryptCaesarCipher(s, SHIFT), SHIFT).equals(s);
+       assert b : "Invalid encryption.";
+   }
+
+
+   public static void validateDecryption(String s, int SHIFT) {
+       boolean b = encryptCaesarCipher(decryptCaesarCipher(s, SHIFT), SHIFT).equals(s);
+       assert b : "Invalid decryption.";
+   }
+
+
+   public static void main(String[] args) {
+       Scanner scan = new Scanner(System.in);
+       System.out.print("Enter 1. Encrypt, 2. Decrypt, 3. Validate: ");
+       int choice = Integer.parseInt(scan.nextLine());
+       System.out.print("Enter string: ");
+       String s = scan.nextLine();
+       System.out.print("Enter shift: ");
+       String shift_s = scan.nextLine();
+       int shift = (shift_s.isEmpty() ? 10 : Integer.parseInt(shift_s));
+       switch (choice) {
+           case 1:
+               displayASCII(s);
+               String res = encryptCaesarCipher(s, shift);
+               validateEncryption(res, shift);
+               displayASCII(res);
+               System.out.println("Encryption Result: " + res);
+               break;
+           case 2:
+               displayASCII(s);
+               String res1 = decryptCaesarCipher(s, shift);
+               validateDecryption(res1, shift);
+               displayASCII(res1);
+               System.out.println("Decryption Result: " + res1);
+               break;
+           default:
+               System.out.println("Invalid choice");
+       }
+   }
+}
+
+
