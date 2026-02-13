@@ -1,64 +1,43 @@
 package dev;
 
-class ParkingSpot {
-    String plate;
-    long entryTime;
-    boolean deleted;
-}
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-class ParkingLot {
-    private ParkingSpot[] table;
-    private int size;
+class Transaction {
+    int id;
+    int amount;
+    long time;
 
-    public ParkingLot(int capacity) {
-        table = new ParkingSpot[capacity];
-        size = capacity;
-    }
-
-    private int hash(String plate) {
-        return Math.abs(plate.hashCode()) % size;
-    }
-
-    public void park(String plate) {
-        int idx = hash(plate);
-
-        for (int i = 0; i < size; i++) {
-            int probe = (idx + i) % size;
-
-            if (table[probe] == null || table[probe].deleted) {
-                ParkingSpot p = new ParkingSpot();
-                p.plate = plate;
-                p.entryTime = System.currentTimeMillis();
-                table[probe] = p;
-                System.out.println("Parked at " + probe);
-                return;
-            }
-        }
-    }
-
-    public void exit(String plate) {
-        int idx = hash(plate);
-
-        for (int i = 0; i < size; i++) {
-            int probe = (idx + i) % size;
-            ParkingSpot p = table[probe];
-
-            if (p == null) return;
-            if (!p.deleted && p.plate.equals(plate)) {
-                long duration = System.currentTimeMillis() - p.entryTime;
-                p.deleted = true;
-                System.out.println("Exited. Duration: " + duration / 1000 + "s");
-                return;
-            }
-        }
+    Transaction(int id, int amount, long time) {
+        this.id = id;
+        this.amount = amount;
+        this.time = time;
     }
 }
 
 public class Main {
+
+    public static List<int[]> twoSum(List<Transaction> tx, int target) {
+        Map<Integer, Transaction> map = new HashMap<>();
+        List<int[]> res = new ArrayList<>();
+
+        for (Transaction t : tx) {
+            int comp = target - t.amount;
+            if (map.containsKey(comp)) {
+                res.add(new int[]{map.get(comp).id, t.id});
+            }
+            map.put(t.amount, t);
+        }
+        return res;
+    }
+
     public static void main(String[] args) {
-        ParkingLot lot = new ParkingLot(500);
-        lot.park("ABC123");
-        lot.park("XYZ999");
-        lot.exit("ABC123");
+        List<Transaction> tx = List.of(new Transaction(1, 500, 1), new Transaction(2, 300, 2), new Transaction(3, 200, 3));
+
+        var pairs = twoSum(tx, 500);
+        for (int[] p : pairs)
+            System.out.println(p[0] + "," + p[1]);
     }
 }
