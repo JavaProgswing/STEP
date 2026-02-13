@@ -1,43 +1,57 @@
 package dev;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-class Transaction {
-    int id;
-    int amount;
-    long time;
+class LRUCache<K, V> extends LinkedHashMap<K, V> {
+    private int capacity;
 
-    Transaction(int id, int amount, long time) {
-        this.id = id;
-        this.amount = amount;
-        this.time = time;
+    public LRUCache(int capacity) {
+        super(capacity, 0.75f, true);
+        this.capacity = capacity;
+    }
+
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return size() > capacity;
+    }
+}
+
+class MultiLevelCache {
+    LRUCache<String, String> L1 = new LRUCache<>(3);
+    Map<String, String> L2 = new HashMap<>();
+    Map<String, String> DB = new HashMap<>();
+
+    public String get(String key) {
+        if (L1.containsKey(key)) {
+            System.out.println("L1 hit");
+            return L1.get(key);
+        }
+
+        if (L2.containsKey(key)) {
+            System.out.println("L2 hit → promote to L1");
+            String v = L2.get(key);
+            L1.put(key, v);
+            return v;
+        }
+
+        if (DB.containsKey(key)) {
+            System.out.println("DB hit → add to L2");
+            String v = DB.get(key);
+            L2.put(key, v);
+            return v;
+        }
+
+        return null;
     }
 }
 
 public class Main {
-
-    public static List<int[]> twoSum(List<Transaction> tx, int target) {
-        Map<Integer, Transaction> map = new HashMap<>();
-        List<int[]> res = new ArrayList<>();
-
-        for (Transaction t : tx) {
-            int comp = target - t.amount;
-            if (map.containsKey(comp)) {
-                res.add(new int[]{map.get(comp).id, t.id});
-            }
-            map.put(t.amount, t);
-        }
-        return res;
-    }
-
     public static void main(String[] args) {
-        List<Transaction> tx = List.of(new Transaction(1, 500, 1), new Transaction(2, 300, 2), new Transaction(3, 200, 3));
+        MultiLevelCache cache = new MultiLevelCache();
+        cache.DB.put("video1", "data1");
 
-        var pairs = twoSum(tx, 500);
-        for (int[] p : pairs)
-            System.out.println(p[0] + "," + p[1]);
+        cache.get("video1");
+        cache.get("video1");
     }
 }
