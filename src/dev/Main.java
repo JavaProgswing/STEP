@@ -1,82 +1,55 @@
 package dev;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
-class TokenBucket {
-
-    private final int capacity;
-    private final int refillRatePerSec;
-
-    private double tokens;
-    private long lastRefill;
-
-    public TokenBucket(int cap, int ratePerSec) {
-        capacity = cap;
-        refillRatePerSec = ratePerSec;
-        tokens = cap;
-        lastRefill = System.nanoTime();
-    }
-
-    public synchronized boolean allow() {
-        refill();
-
-        if (tokens >= 1) {
-            tokens -= 1;
-            return true;
-        }
-        return false;
-    }
-
-    private void refill() {
-        long now = System.nanoTime();
-        double seconds = (now - lastRefill) / 1e9;
-
-        double add = seconds * refillRatePerSec;
-        if (add > 0) {
-            tokens = Math.min(capacity, tokens + add);
-            lastRefill = now;
-        }
-    }
-
-    public synchronized int remaining() {
-        refill();
-        return (int) tokens;
-    }
+class TrieNode {
+    Map<Character, TrieNode> children = new HashMap<>();
+    Map<String, Integer> freqMap = new HashMap<>();
 }
 
-class RateLimiter {
+class AutocompleteSystem {
+    private TrieNode root = new TrieNode();
+    private Map<String, Integer> globalFreq = new HashMap<>();
 
-    private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
+    public void addQuery(String query, int freq) {
+        globalFreq.put(query, globalFreq.getOrDefault(query, 0) + freq);
+        TrieNode node = root;
 
-    private final int LIMIT = 1000;
-    private final int REFILL_PER_SEC = 1000 / 3600; // per hour
-
-    public boolean check(String client) {
-        TokenBucket b = buckets.computeIfAbsent(client, k -> new TokenBucket(LIMIT, REFILL_PER_SEC));
-        return b.allow();
+        for (char c : query.toCharArray()) {
+            node.children.putIfAbsent(c, new TrieNode());
+            node = node.children.get(c);
+            node.freqMap.put(query, globalFreq.get(query));
+        }
     }
 
-    public int remaining(String client) {
-        return buckets.getOrDefault(client, new TokenBucket(LIMIT, REFILL_PER_SEC)).remaining();
+    public List<String> search(String prefix) {
+        TrieNode node = root;
+        for (char c : prefix.toCharArray()) {
+            if (!node.children.containsKey(c)) return new ArrayList<>();
+            node = node.children.get(c);
+        }
+
+        PriorityQueue<Map.Entry<String, Integer>> pq = new PriorityQueue<>(Map.Entry.comparingByValue());
+
+        for (var e : node.freqMap.entrySet()) {
+            pq.offer(e);
+            if (pq.size() > 10) pq.poll();
+        }
+
+        List<String> res = new ArrayList<>();
+        while (!pq.isEmpty()) res.add(pq.poll().getKey());
+        Collections.reverse(res);
+        return res;
     }
 }
 
 public class Main {
-
     public static void main(String[] args) {
+        AutocompleteSystem ac = new AutocompleteSystem();
+        ac.addQuery("java tutorial", 100);
+        ac.addQuery("javascript", 90);
+        ac.addQuery("java download", 80);
 
-        RateLimiter rl = new RateLimiter();
-
-        String client = "abc123";
-
-        for (int i = 0; i < 1100; i++) {
-            if (rl.check(client)) {
-                System.out.println("Allowed → remaining: " + rl.remaining(client));
-            } else {
-                System.out.println("DENIED → limit reached");
-                break;
-            }
-        }
+        System.out.println(ac.search("jav"));
     }
 }
