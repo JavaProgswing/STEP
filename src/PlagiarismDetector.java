@@ -1,11 +1,10 @@
 import java.util.*;
 
 public class PlagiarismDetector {
-
-    private static final int N = 5; // 5-gram
+    private static final int N = 5;
     private final Map<String, Set<String>> index = new HashMap<>();
     private final Map<String, String> documents = new HashMap<>();
-    // Add Document to System
+
     public void addDocument(String docId, String content) {
         documents.put(docId, content);
 
@@ -15,9 +14,8 @@ public class PlagiarismDetector {
             index.computeIfAbsent(gram, k -> new HashSet<>()).add(docId);
         }
     }
-    // Analyze Document for Plagiarism
-    public void analyzeDocument(String docId) {
 
+    public void analyzeDocument(String docId) {
         String content = documents.get(docId);
         if (content == null) {
             System.out.println("Document not found.");
@@ -57,9 +55,8 @@ public class PlagiarismDetector {
             System.out.println();
         }
     }
-    // Generate N-Grams
-    private List<String> generateNGrams(String text) {
 
+    private List<String> generateNGrams(String text) {
         String[] words = text.toLowerCase().split("\\s+");
         List<String> result = new ArrayList<>();
 
@@ -75,20 +72,16 @@ public class PlagiarismDetector {
 
         return result;
     }
-    // Demo Main
-    public static void main(String[] args) {
 
+    public static void main(String[] args) {
         PlagiarismDetector detector = new PlagiarismDetector();
 
         detector.addDocument("essay_1",
                 "data structures and algorithms are important for coding interviews");
-
         detector.addDocument("essay_2",
                 "data structures and algorithms are important for competitive programming");
-
         detector.addDocument("essay_3",
                 "machine learning and artificial intelligence are future technologies");
-
         detector.analyzeDocument("essay_2");
     }
 }

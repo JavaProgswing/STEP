@@ -7,9 +7,7 @@ public class FlashSaleSystem {
     private final Map<String, AtomicInteger> inventory = new ConcurrentHashMap<>();
     private final Map<String, Queue<Integer>> waitingList = new ConcurrentHashMap<>();
 
-    // Demo Main
     public static void main(String[] args) throws InterruptedException {
-
         FlashSaleSystem system = new FlashSaleSystem();
         system.addProduct("IPHONE15_256GB", 5);
 
@@ -28,21 +26,17 @@ public class FlashSaleSystem {
         System.out.println("Final Stock: " + system.checkStock("IPHONE15_256GB"));
     }
 
-    // Add Product
     public void addProduct(String productId, int stock) {
         inventory.put(productId, new AtomicInteger(stock));
         waitingList.put(productId, new ConcurrentLinkedQueue<>());
     }
 
-    // Check Stock (O(1))
     public int checkStock(String productId) {
         AtomicInteger stock = inventory.get(productId);
         return stock == null ? 0 : stock.get();
     }
 
-    // Purchase Item
     public String purchaseItem(String productId, int userId) {
-
         AtomicInteger stock = inventory.get(productId);
 
         if (stock == null) {
@@ -64,9 +58,7 @@ public class FlashSaleSystem {
         }
     }
 
-    // Process Cancellation (Optional)
     public String restock(String productId, int quantity) {
-
         AtomicInteger stock = inventory.get(productId);
         Queue<Integer> queue = waitingList.get(productId);
 

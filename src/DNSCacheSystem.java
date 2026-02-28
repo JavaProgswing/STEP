@@ -18,9 +18,7 @@ public class DNSCacheSystem {
         };
     }
 
-    // Demo Main
     public static void main(String[] args) throws InterruptedException {
-
         DNSCacheSystem cache = new DNSCacheSystem(3);
 
         System.out.println(cache.resolve("google.com"));
@@ -37,9 +35,7 @@ public class DNSCacheSystem {
         cache.printStats();
     }
 
-    // Resolve Domain
     public synchronized String resolve(String domain) {
-
         DNSEntry entry = cache.get(domain);
 
         if (entry != null) {
@@ -56,14 +52,13 @@ public class DNSCacheSystem {
         System.out.println("Cache MISS for " + domain);
 
         String ip = queryUpstream(domain);
-        cache.put(domain, new DNSEntry(ip, 5)); // TTL = 5 sec
+        cache.put(domain, new DNSEntry(ip, 5));
         return ip;
     }
 
-    // Simulate Upstream DNS
     private String queryUpstream(String domain) {
         try {
-            Thread.sleep(100); // simulate latency
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -71,7 +66,6 @@ public class DNSCacheSystem {
         return "192.168.1." + new Random().nextInt(255);
     }
 
-    // Stats
     public void printStats() {
         long total = hits + misses;
         double hitRate = total == 0 ? 0 : (hits * 100.0 / total);
