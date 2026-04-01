@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.List;
-
 class Bogie {
     private String name;
     private int capacity;
@@ -25,26 +22,23 @@ class Bogie {
 }
 
 public class TrainConsistMgmnt {
-    public static void performanceComparison(List<Bogie> bogies) {
-        long startTime = System.nanoTime();
-        for (Bogie bogie : bogies) {
-            System.out.println(bogie);
+    public static void validateBogieCapacity(int capacity) throws InvalidCapacityException {
+        if (capacity < 10) {
+            throw new InvalidCapacityException("Capacity is too low!");
         }
-        long endTime = System.nanoTime();
-        System.out.println("Loop Time: " + (endTime - startTime) + " ns");
-
-        startTime = System.nanoTime();
-        bogies.stream().forEach(System.out::println);
-        endTime = System.nanoTime();
-        System.out.println("Stream Time: " + (endTime - startTime) + " ns");
     }
 
     public static void main(String[] args) {
-        List<Bogie> bogies = new ArrayList<>();
-        bogies.add(new Bogie("Sleeper", 72));
-        bogies.add(new Bogie("AC Chair", 56));
-        bogies.add(new Bogie("First Class", 30));
+        try {
+            validateBogieCapacity(8);
+        } catch (InvalidCapacityException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
-        performanceComparison(bogies);
+    static class InvalidCapacityException extends Exception {
+        public InvalidCapacityException(String message) {
+            super(message);
+        }
     }
 }
