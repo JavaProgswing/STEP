@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -34,22 +33,18 @@ class BogieCapacityComparator implements Comparator<Bogie> {
     }
 }
 
+
 public class TrainConsistMgmnt {
+    public static void filterPassengerBogie(List<Bogie> bogies) {
+        bogies.stream().filter(bogie -> bogie.getCapacity() > 50).forEach(System.out::println);
+    }
+
     public static void main(String[] args) {
         List<Bogie> bogies = new ArrayList<>();
-
-        // Adding bogies with different capacities
         bogies.add(new Bogie("Sleeper", 72));
         bogies.add(new Bogie("AC Chair", 56));
         bogies.add(new Bogie("First Class", 30));
 
-        // Sort the list using Comparator
-        Collections.sort(bogies, new BogieCapacityComparator());
-
-        // Display sorted bogies
-        System.out.println("Bogies sorted by capacity (descending):");
-        for (Bogie bogie : bogies) {
-            System.out.println(bogie);
-        }
+        filterPassengerBogie(bogies);
     }
 }
