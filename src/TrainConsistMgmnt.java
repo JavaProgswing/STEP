@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.List;
-
 class Bogie {
     private String name;
     private int capacity;
@@ -26,17 +23,11 @@ class Bogie {
 
 
 public class TrainConsistMgmnt {
-    public static void countTotalSeats(List<Bogie> bogies) {
-        int totalSeats = bogies.stream().mapToInt(Bogie::getCapacity).reduce(0, Integer::sum);
-        System.out.println("Total Seats in Train: " + totalSeats);
+    public static boolean validateTrainId(String trainId) {
+        return trainId.matches("[A-Z]{2}\\d{4}");
     }
 
     public static void main(String[] args) {
-        List<Bogie> bogies = new ArrayList<>();
-        bogies.add(new Bogie("Sleeper", 72));
-        bogies.add(new Bogie("AC Chair", 56));
-        bogies.add(new Bogie("First Class", 30));
-
-        countTotalSeats(bogies);
+        System.out.println("Valid Train ID: " + validateTrainId("AB1234"));
     }
 }
