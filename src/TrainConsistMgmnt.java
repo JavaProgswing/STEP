@@ -23,11 +23,11 @@ class Bogie {
 
 
 public class TrainConsistMgmnt {
-    public static boolean validateTrainId(String trainId) {
-        return trainId.matches("[A-Z]{2}\\d{4}");
+    public static boolean checkSafetyCompliance(String cargoType) {
+        return cargoType.equals("Flammable") || cargoType.equals("Non-Flammable");
     }
 
     public static void main(String[] args) {
-        System.out.println("Valid Train ID: " + validateTrainId("AB1234"));
+        System.out.println("Is safety compliant: " + checkSafetyCompliance("Flammable"));
     }
 }
