@@ -22,23 +22,18 @@ class Bogie {
 }
 
 public class TrainConsistMgmnt {
-    public static void validateBogieCapacity(int capacity) throws InvalidCapacityException {
-        if (capacity < 10) {
-            throw new InvalidCapacityException("Capacity is too low!");
+    public static void cargoAssignment(String cargoType) {
+        try {
+            if (cargoType == null) throw new NullPointerException("Cargo type cannot be null");
+            System.out.println("Cargo type: " + cargoType);
+        } catch (NullPointerException e) {
+            System.out.println("Error: " + e.getMessage());
+        } finally {
+            System.out.println("Cargo assignment process completed.");
         }
     }
 
     public static void main(String[] args) {
-        try {
-            validateBogieCapacity(8);
-        } catch (InvalidCapacityException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    static class InvalidCapacityException extends Exception {
-        public InvalidCapacityException(String message) {
-            super(message);
-        }
+        cargoAssignment("Flammable");
     }
 }
