@@ -25,15 +25,6 @@ class Bogie {
     }
 }
 
-
-class BogieCapacityComparator implements Comparator<Bogie> {
-    @Override
-    public int compare(Bogie b1, Bogie b2) {
-        return Integer.compare(b2.getCapacity(), b1.getCapacity()); // Descending order
-    }
-}
-
-
 public class TrainConsistMgmnt {
     public static void filterPassengerBogie(List<Bogie> bogies) {
         bogies.stream().filter(bogie -> bogie.getCapacity() > 50).forEach(System.out::println);
