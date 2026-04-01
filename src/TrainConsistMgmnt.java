@@ -1,6 +1,7 @@
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 class Bogie {
     private String name;
@@ -25,9 +26,11 @@ class Bogie {
     }
 }
 
+
 public class TrainConsistMgmnt {
-    public static void filterPassengerBogie(List<Bogie> bogies) {
-        bogies.stream().filter(bogie -> bogie.getCapacity() > 50).forEach(System.out::println);
+    public static void groupBogieByType(List<Bogie> bogies) {
+        Map<String, List<Bogie>> groupedBogie = bogies.stream().collect(Collectors.groupingBy(bogie -> bogie.getName().split(" ")[0]));
+        groupedBogie.forEach((type, list) -> System.out.println(type + ": " + list));
     }
 
     public static void main(String[] args) {
@@ -36,6 +39,6 @@ public class TrainConsistMgmnt {
         bogies.add(new Bogie("AC Chair", 56));
         bogies.add(new Bogie("First Class", 30));
 
-        filterPassengerBogie(bogies);
+        groupBogieByType(bogies);
     }
 }
