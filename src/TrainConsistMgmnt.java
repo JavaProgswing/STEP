@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Comparator;
+import java.util.List;
 
 class Bogie {
     private String bogieId;
@@ -44,18 +44,25 @@ public class TrainConsistMgmnt {
         String[] ids = bogies.stream().map(Bogie::getBogieId).toArray(String[]::new);
         System.out.println("Sorted Bogie IDs: " + Arrays.toString(ids));
 
-        // Determine target to search: use first CLI arg if provided, otherwise demo with "B102"
         String targetId = "B102";
         if (args.length > 0) {
             targetId = args[0];
         }
 
-        int foundIndex = binarySearch(ids, targetId);
-        if (foundIndex >= 0) {
-            System.out.println("Bogie with ID " + targetId + " exists at index " + foundIndex + ".");
-            System.out.println("Matching bogie: " + bogies.get(foundIndex));
-        } else {
-            System.out.println("Bogie with ID " + targetId + " does not exist.");
+        try {
+            if (bogies.isEmpty()) {
+                throw new IllegalStateException("No bogies available to search. Please add bogies before searching.");
+            }
+
+            int foundIndex = binarySearch(ids, targetId);
+            if (foundIndex >= 0) {
+                System.out.println("Bogie with ID " + targetId + " exists at index " + foundIndex + ".");
+                System.out.println("Matching bogie: " + bogies.get(foundIndex));
+            } else {
+                System.out.println("Bogie with ID " + targetId + " does not exist.");
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("Search error: " + e.getMessage());
         }
     }
 
