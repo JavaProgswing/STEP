@@ -1,25 +1,25 @@
-public class QuantityMeasurementApp {
+enum LengthUnit {
+    FEET(1.0),
+    INCH(1.0 / 12.0),
+    YARD(3.0),
+    CENTIMETER(1.0 / 30.48);
 
-    public enum LengthUnit {
-        FEET(1.0),
-        INCH(1.0 / 12.0),
-        YARD(3.0),
-        CENTIMETER(0.393701 / 12.0);
+    private final double toFeetFactor;
 
-        private final double toFeetFactor;
-
-        LengthUnit(double toFeetFactor) {
-            this.toFeetFactor = toFeetFactor;
-        }
-
-        public double toFeet(double value) {
-            return value * toFeetFactor;
-        }
-
-        public double fromFeet(double feetValue) {
-            return feetValue / toFeetFactor;
-        }
+    LengthUnit(double toFeetFactor) {
+        this.toFeetFactor = toFeetFactor;
     }
+
+    public double convertToBaseUnit(double value) {
+        return value * toFeetFactor;
+    }
+
+    public double convertFromBaseUnit(double baseValue) {
+        return baseValue / toFeetFactor;
+    }
+}
+
+public class QuantityMeasurementApp {
 
     public static class QuantityLength {
         private final double value;
@@ -33,17 +33,16 @@ public class QuantityMeasurementApp {
         }
 
         private double toBase() {
-            return unit.toFeet(value);
+            return unit.convertToBaseUnit(value);
         }
 
         private static QuantityLength fromBase(double base, LengthUnit target) {
-            double v = target.fromFeet(base);
-            return new QuantityLength(v, target);
+            return new QuantityLength(target.convertFromBaseUnit(base), target);
         }
 
         public QuantityLength convertTo(LengthUnit targetUnit) {
             if (targetUnit == null) throw new IllegalArgumentException("Target unit cannot be null");
-            return fromBase(toBase(), targetUnit);
+            return fromBase(this.toBase(), targetUnit);
         }
 
         public QuantityLength add(QuantityLength other) {
@@ -73,9 +72,11 @@ public class QuantityMeasurementApp {
         }
     }
 
-    public static QuantityLength add(QuantityLength q1, QuantityLength q2) {
-        if (q1 == null || q2 == null) throw new IllegalArgumentException("Null operand");
-        return q1.add(q2);
+    public static double convert(double value, LengthUnit source, LengthUnit target) {
+        if (source == null || target == null) throw new IllegalArgumentException("Unit cannot be null");
+        if (!Double.isFinite(value)) throw new IllegalArgumentException("Invalid value");
+        double base = source.convertToBaseUnit(value);
+        return target.convertFromBaseUnit(base);
     }
 
     public static QuantityLength add(QuantityLength q1, QuantityLength q2, LengthUnit targetUnit) {
@@ -83,25 +84,19 @@ public class QuantityMeasurementApp {
         return q1.add(q2, targetUnit);
     }
 
-    public static QuantityLength add(double v1, LengthUnit u1, double v2, LengthUnit u2, LengthUnit targetUnit) {
-        return new QuantityLength(v1, u1).add(new QuantityLength(v2, u2), targetUnit);
-    }
-
     public static void main(String[] args) {
-        System.out.println(add(new QuantityLength(1.0, LengthUnit.FEET),
-                new QuantityLength(12.0, LengthUnit.INCH),
-                LengthUnit.FEET));
+        System.out.println(new QuantityLength(1.0, LengthUnit.FEET).convertTo(LengthUnit.INCH));
 
-        System.out.println(add(new QuantityLength(1.0, LengthUnit.FEET),
+        System.out.println(add(
+                new QuantityLength(1.0, LengthUnit.FEET),
                 new QuantityLength(12.0, LengthUnit.INCH),
-                LengthUnit.INCH));
+                LengthUnit.FEET
+        ));
 
-        System.out.println(add(new QuantityLength(1.0, LengthUnit.FEET),
-                new QuantityLength(12.0, LengthUnit.INCH),
-                LengthUnit.YARD));
+        System.out.println(new QuantityLength(36.0, LengthUnit.INCH)
+                .equals(new QuantityLength(1.0, LengthUnit.YARD)));
 
-        System.out.println(add(new QuantityLength(36.0, LengthUnit.INCH),
-                new QuantityLength(1.0, LengthUnit.YARD),
-                LengthUnit.FEET));
+        System.out.println(new QuantityLength(1.0, LengthUnit.YARD)
+                .add(new QuantityLength(3.0, LengthUnit.FEET), LengthUnit.YARD));
     }
 }
