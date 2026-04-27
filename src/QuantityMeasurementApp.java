@@ -36,18 +36,27 @@ public class QuantityMeasurementApp {
             return unit.toFeet(value);
         }
 
+        private static QuantityLength fromBase(double base, LengthUnit target) {
+            double v = target.fromFeet(base);
+            return new QuantityLength(v, target);
+        }
+
         public QuantityLength convertTo(LengthUnit targetUnit) {
             if (targetUnit == null) throw new IllegalArgumentException("Target unit cannot be null");
-            double base = toBase();
-            double converted = targetUnit.fromFeet(base);
-            return new QuantityLength(converted, targetUnit);
+            return fromBase(toBase(), targetUnit);
         }
 
         public QuantityLength add(QuantityLength other) {
             if (other == null) throw new IllegalArgumentException("Other cannot be null");
-            double sumBase = this.toBase() + other.toBase();
-            double result = this.unit.fromFeet(sumBase);
-            return new QuantityLength(result, this.unit);
+            double sum = this.toBase() + other.toBase();
+            return fromBase(sum, this.unit);
+        }
+
+        public QuantityLength add(QuantityLength other, LengthUnit targetUnit) {
+            if (other == null) throw new IllegalArgumentException("Other cannot be null");
+            if (targetUnit == null) throw new IllegalArgumentException("Target unit cannot be null");
+            double sum = this.toBase() + other.toBase();
+            return fromBase(sum, targetUnit);
         }
 
         @Override
@@ -69,24 +78,30 @@ public class QuantityMeasurementApp {
         return q1.add(q2);
     }
 
-    public static QuantityLength add(double v1, LengthUnit u1, double v2, LengthUnit u2) {
-        return new QuantityLength(v1, u1).add(new QuantityLength(v2, u2));
+    public static QuantityLength add(QuantityLength q1, QuantityLength q2, LengthUnit targetUnit) {
+        if (q1 == null || q2 == null) throw new IllegalArgumentException("Null operand");
+        return q1.add(q2, targetUnit);
+    }
+
+    public static QuantityLength add(double v1, LengthUnit u1, double v2, LengthUnit u2, LengthUnit targetUnit) {
+        return new QuantityLength(v1, u1).add(new QuantityLength(v2, u2), targetUnit);
     }
 
     public static void main(String[] args) {
         System.out.println(add(new QuantityLength(1.0, LengthUnit.FEET),
-                new QuantityLength(2.0, LengthUnit.FEET)));
+                new QuantityLength(12.0, LengthUnit.INCH),
+                LengthUnit.FEET));
 
         System.out.println(add(new QuantityLength(1.0, LengthUnit.FEET),
-                new QuantityLength(12.0, LengthUnit.INCH)));
+                new QuantityLength(12.0, LengthUnit.INCH),
+                LengthUnit.INCH));
 
-        System.out.println(add(new QuantityLength(12.0, LengthUnit.INCH),
-                new QuantityLength(1.0, LengthUnit.FEET)));
+        System.out.println(add(new QuantityLength(1.0, LengthUnit.FEET),
+                new QuantityLength(12.0, LengthUnit.INCH),
+                LengthUnit.YARD));
 
-        System.out.println(add(new QuantityLength(1.0, LengthUnit.YARD),
-                new QuantityLength(3.0, LengthUnit.FEET)));
-
-        System.out.println(add(new QuantityLength(2.54, LengthUnit.CENTIMETER),
-                new QuantityLength(1.0, LengthUnit.INCH)));
+        System.out.println(add(new QuantityLength(36.0, LengthUnit.INCH),
+                new QuantityLength(1.0, LengthUnit.YARD),
+                LengthUnit.FEET));
     }
 }
